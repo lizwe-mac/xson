@@ -3,7 +3,8 @@ import * as XLSX from 'xlsx';
 import { Button, Grid, Paper, Typography } from "@material-ui/core";
 import { useStyles } from "./home.style";
 import { CloudUpload, FileCopy, GetApp } from "@material-ui/icons";
-// import jsonlint from 'jsonlint';
+import { ToastContainer, toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const Exson = () => {
   const [json, setJson] = useState(null);
@@ -11,7 +12,9 @@ const Exson = () => {
   const classes = useStyles();
 
   const handleFileChange = (event) => {
+    if(json) setJson(null);
     const file = event.target.files[0];
+    setFileName(file.name.split('.'));
     const reader = new FileReader();
     reader.onload = (event) => {
       const data = new Uint8Array(event.target.result);
@@ -26,12 +29,13 @@ const Exson = () => {
       setJson(jsonArray);
     };
     reader.readAsArrayBuffer(file);
-    const validateJson = JSON.parse(`${json}`);
-    console.log('validateJson', json);
+    // const validateJson = JSON.parse(`${JSON.stringify(json)}`);
+    // console.log('validateJson', json);
   };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(JSON.stringify(json));
+    toast.success('Copied to clipboard', {position: toast.POSITION.BOTTOM_CENTER, autoClose:5000});
   };
 
   const handleDownload = () => {
@@ -39,18 +43,20 @@ const Exson = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${fileName}.json`;
+    a.download = `${fileName[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    toast.success(`File downloaded\n (${fileName[0]}.json)`, {position: toast.POSITION.BOTTOM_CENTER, autoClose:5000});
   };
 
 
   return (
     <Paper className={classes.root}>
+      <ToastContainer />
       <Typography variant="h5" component="h1">
-        Excel to JSON Converter
+        XON Converter
       </Typography>
       <input
         accept=".xls,.xlsx"
@@ -59,9 +65,8 @@ const Exson = () => {
         type="file"
         onChange={handleFileChange}
       />
-      <Grid container>
-        <Grid item xs={12}>
-          <label htmlFor="upload-file">
+      
+      {!json ? <label htmlFor="upload-file">
             <Button
               variant="contained"
               color="primary"
@@ -70,9 +75,20 @@ const Exson = () => {
             >
               Upload Excel File
             </Button>
+        </label> : (<Grid container>
+        <Grid item xs={12}>
+          <label htmlFor="upload-file">
+            <Button
+              variant="contained"
+              color="primary"
+              component="span"
+              startIcon={<CloudUpload />}
+            >
+              Upload Another Excel File
+            </Button>
           </label>
         </Grid>
-        {json && (
+        
           <>
             <Grid item xs={12}>
               <pre style={{maxHeight:700, maxWidth: 1440, overflow:'scroll', scrollBehavior:'smooth'}}>{JSON.stringify(json, null, 2)}</pre>
@@ -99,8 +115,9 @@ const Exson = () => {
             </Grid>
             
           </>
-        )}
+        
       </Grid>
+      )}
     </Paper>
   );
 };
